@@ -1,0 +1,27 @@
+{
+    "name": "reciper",
+    "type": "project",
+    "description": "A recipe manager",
+    "keywords": ["recipe"],
+    "homepage": "https://github.com/mikhail-leonov/recipe",
+    "version": "0.1.0",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "mikhail-leonov",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/mikhail-leonov/recipe/issues",
+        "source": "https://github.com/mikhail-leonov/recipe"
+    },
+    "require": {
+        "php": ">=7.0",
+        "smarty/smarty": "^3.1",
+        "klein/klein": "^2.1",
+        "lichtner/fluentpdo": "dev-master",
+        "recipe/recipe": "dev-master"
+    }
+}
