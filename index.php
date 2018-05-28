@@ -5,8 +5,8 @@
  *
  * GET:/tags            - // Returns all tags
  * POST:/tags        	- // Create a new tag 
- * PUT:/tags 			- // Bulk update of tags
- * DELETE:/tags 		- // Delete all tags
+ * PUT:/tags 		- // Bulk update of tags
+ * DELETE:/tags 	- // Delete all tags
  * GET:/tags/tag_id 	- // Return a specified tag
  * POST:/tags/tag_id 	- // Not allowed
  * PUT:/tags/tag_id 	- // Update a specified tag
@@ -38,7 +38,10 @@ require_once __DIR__ . '/vendor/recipe/recipe/src/Recipe/bootstrap.php';
  */
 use \Recipe\Util;
 use \Recipe\Controllers\ImportController;
-use \Recipe\Controllers\HomeController;
+use \Recipe\Controllers\GroupApiController;
+use \Recipe\Controllers\GroupUiController;
+use \Recipe\Controllers\TagApiController;
+use \Recipe\Controllers\TagUiController;
 use \Recipe\Controllers\EntryController;
 use \Recipe\Controllers\ApiController;
 use \Klein\Klein;
@@ -67,29 +70,45 @@ $router->with('/ui', function () use ($router) {
 	 */
     $router->with('/v1', function () use ($router) {
 	
-        $controller = new EntryController();
-
-        $router->respond('GET', '/entries', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->GetSelectedEntries($request);
         });
-        $router->respond('GET', '/entries/search', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries/search', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->GetFoundEntries($request);
         });
-        $router->respond('GET', '/entries/all', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries/all', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->GetAllEntries($request);
         });
-        $router->respond('GET', '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->ViewEntry($request);
         });
-        $router->respond('GET', '/entries/[i:entry_id]/edit', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries/[i:entry_id]/edit', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->EditEntry($request);
         });
-        $router->respond('GET', '/entries/[i:entry_id]/print', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries/[i:entry_id]/print', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->PrintEntry($request);
         });
-        $router->respond('GET', '/entries/new', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
+        $router->respond('GET', '/entries/new', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryController();
             return $controller->NewEntry($request);
         });
+
+        $router->respond('GET', '/groups', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupUiController();
+            return $controller->getGroups($request);
+        });
+
+        $router->respond('GET', '/tags', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagUiController();
+            return $controller->getTags($request);
+        });
+
     });
 
 });
@@ -104,48 +123,103 @@ $router->with('/api', function () use ($router) {
 	 */
     $router->with('/v1', function () use ($router) {
 
-   	    $controller = new ApiController();
 		
         // Returns a list of tags
-        $router->respond('GET'   , '/tags'           , function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('GET'   , '/tags'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->getTags($request);
+        });
         // Create a new tag 
-        $router->respond('POST'  , '/tags'           , function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('POST'  , '/tags'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->postTags($request);
+        });
         // Bulk update of tags
-        $router->respond('PUT'   , '/tags'           , function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('PUT'   , '/tags'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->putTags($request);
+        });
         // Delete all tags
-        $router->respond('DELETE', '/tags'           , function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('DELETE', '/tags'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->deleteTags($request);
+        });
         // Return a specified tag
-        $router->respond('GET'   , '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('GET'   , '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->getTag($request);
+        });
         // Not allowed
-        $router->respond('POST'  , '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('POST'  , '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->postTag($request);
+        });
         // Update a specified tag
-        $router->respond('PUT'   , '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('PUT'   , '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->putTag($request);
+        });
         // Delete a specified tag
-        $router->respond('DELETE', '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return '';
-		});
+        $router->respond('DELETE', '/tags/[i:tag_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->deleteTag($request);
+        });
+
+
         // Select a tag 
-        $router->respond('PUT'   , '/tag'            , function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return $controller->SelectTag($request);
-		});
+        $router->respond('PUT'   , '/tag'            , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new ApiController();
+            return $controller->SelectTag($request);
+        });
         // Unselect a tag 
-        $router->respond('GET'   , '/tag'            , function ($request, $response, $service, $app, $router, $matched) use ($controller) {
-			return $controller->UnselectTag($request);
-		});
+        $router->respond('GET'   , '/tag'            , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new ApiController();
+            return $controller->UnselectTag($request);
+        });
+
+		
+        // Returns a list of Groups
+        $router->respond('GET'   , '/groups'             , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->getGroups($request);
+        });
+        // Create a new tag 
+        $router->respond('POST'  , '/groups'             , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->postGroups($request);
+        });
+        // Bulk update of tags
+        $router->respond('PUT'   , '/groups'             , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->putGroups($request);
+        });
+        // Delete all tags
+        $router->respond('DELETE', '/groups'             , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->deleteGroups($request);
+        });
+        // Return a specified tag
+        $router->respond('GET'   , '/groups/[i:group_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->getGroup($request);
+        });
+        // Not allowed
+        $router->respond('POST'  , '/groups/[i:group_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->postGroup($request);
+        });
+        // Update a specified tag
+        $router->respond('PUT'   , '/groups/[i:group_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->putGroup($request);
+        });
+        // Delete a specified tag
+        $router->respond('DELETE', '/groups/[i:group_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new GroupApiController();
+            return $controller->deleteGroup($request);
+        });
+
+
 
     });
 
