@@ -1,5 +1,5 @@
 {
-    "name": "reciper",
+    "name": "recipe/reciper",
     "type": "project",
     "description": "A recipe manager",
     "keywords": ["recipe"],
