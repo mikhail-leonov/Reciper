@@ -12,8 +12,32 @@ class Base {
     delete  (uri, obj, done, fail) { this.call(uri, obj, 'DELETE' , done, fail); }
     options (uri, obj, done, fail) { this.call(uri, obj, 'OPTIONS', done, fail); }
 }
-class API extends Base { constructor(version) { super(version); } call (uri, obj, action, done, fail) { var call = { type: action, url: '/api/v' + this.version + uri, data: obj } ; $.ajax(call).fail(function(responce) { fail(responce); }).done(function(responce) { done(responce); }); } }
-class UI  extends Base { constructor(version) { super(version); } call (uri, obj, action, done, fail) { var call = { type: action, url: '/ui/v'  + this.version + uri, data: obj } ; $.ajax(call).fail(function(responce) { fail(responce); }).done(function(responce) { done(responce); }); } redirect(uri, obj) { window.location.href = '/ui/v' + this.version + uri + "?" + $.param( obj ); } }
+class API extends Base { 
+    constructor(version) { super(version); } 
+    call (uri, obj, action, done, fail) { 
+        var call = { type: action, url: '/api/v' + this.version + uri, data: obj } ; 
+        $.ajax(call).fail(function(response) { 
+            fail(response); 
+        }).done(function(response) { 
+            done(response); 
+        }); 
+    } 
+}
+class UI  extends Base { 
+    constructor(version) { super(version); } 
+    redirect(uri, obj) { 
+        if (obj == null){ obj = {}; }
+        window.location.href = '/ui/v' + this.version + uri + "?" + $.param( obj );
+    }
+    call (uri, obj, action, done, fail) { 
+        var call = { type: action, url: '/ui/v'  + this.version + uri, data: obj } ; 
+        $.ajax(call).fail(function(response) { 
+            fail(response); 
+        }).done(function(response) { 
+            done(response); 
+        }); 
+    } 
+}
 
 //
 //
@@ -23,7 +47,22 @@ class UI  extends Base { constructor(version) { super(version); } call (uri, obj
 function getEntryObject(entry_id) {
     var entry_text_content = $("#entry_text").val();
     var entry_name_content = $("#entry_name").val();
-    return { entry_id: entry_id, entry_name: entry_name_content, entry_text: entry_text_content };
+    if (entry_name_content) {
+        if (entry_text_content) {
+            return { entry_id: entry_id, entry_name: entry_name_content, entry_text: entry_text_content };
+        }
+    }
+    return false;
+}
+function tryParseJSON (jsonString){
+    try {
+        var o = JSON.parse(jsonString);
+        if (o && typeof o === "object") {
+            return o;
+        }
+    }
+    catch (e) { }
+    return false;
 }
 
 
@@ -32,31 +71,37 @@ function getEntryObject(entry_id) {
 // UI calls
 //
 //
-function empty   (responce) { }
-function show    (responce) { 
-    var obj = $.parseJSON(responce);
-    if (obj.result == 1) {
-		alert(responce); 
+function empty   (response) { }
+function show    (response) { 
+    var obj = tryParseJSON(response);
+    if (obj) {
+        if (obj.result == 1) {
+	    alert(response); 
+        }
     }
 }
-function reload  (responce) { 
-    var obj = $.parseJSON(responce);
-    if (obj.result == 1) {
-        window.location.reload(true); 
+function reload  (response) { 
+    var obj = tryParseJSON(response);
+    if (obj) {
+        if (obj.result == 1) {
+            window.location.reload(true); 
+        }
     }
 }
-function hideAssigTagsForm(responce){
+function hideAssigTagsForm(response){
     $('#assignTagsModal').modal('hide'); 
-	reload(responce);
+	reload(response);
 }
-function displayFoundTags(responce){
-    var obj = $.parseJSON(responce);
-    if (obj.result == 1) {
-        $.each( obj.data.tags, function( key, value ) {
-			$('#tags option[value=' + value.tag_id + ']').remove();
-			$('#tags').append($('<option>', { value: value.tag_id, text : value.tag_name }));
-		});
-		$('#tags').attr('size', obj.length);
+function displayFoundTags(response){
+    var obj = tryParseJSON(response);
+    if (obj) {
+        if (obj.result == 1) {
+            $.each( obj.data.tags, function( key, value ) {
+		$('#tags option[value=' + value.tag_id + ']').remove();
+		$('#tags').append($('<option>', { value: value.tag_id, text : value.tag_name }));
+	    });
+ 	    $('#tags').attr('size', obj.length);
+        }
     }
 }
 function newTagEdit() { $('#newTagModal').modal('show'); return false; }
@@ -66,12 +111,14 @@ function assignTags() {
     $('#assignTagsModal').modal('show');
     return false;
 }
-function edit(responce) { 
-    var obj = $.parseJSON(responce);
-    if (obj.result == 1) {
-        if(obj.data.entry_id) {
-            site.ui.redirect( '/entries/' + obj.data.entry_id );
-        };
+function edit(response) { 
+    var obj = tryParseJSON(response);
+    if (obj) {
+        if (obj.result == 1) {
+            if(obj.data.entry_id) {
+                site.ui.redirect( '/entries/' + obj.data.entry_id + '/edit' );
+            };
+        }
     }
 }
 
@@ -84,46 +131,66 @@ function edit(responce) {
 //
 // Tags API calls
 //
-function addTag( entry_id, tag_id ) { 
-    var path = site.url.path(); 
-    var obj = { entry_id: entry_id, tag_id: tag_id, href: path };
-    site.api.post( '/tags', obj, reload, show );  return false; 
-}
-function delTag( entry_id, tag_id ) { 
-    var path = site.url.path(); 
-    var obj = { entry_id: entry_id, tag_id: tag_id, href: path };
-    site.api.delete( '/tags', obj, reload, show );  return false; 
+function findTags(entry_id) {
+    var obj = { tags_text: $('#tags_text').val() };
+    site.api.get( '/entry/' + entry_id +'/tags/search', obj, displayFoundTags, empty );  return false; 
 }
 function assingFoundTags(entry_id){
     $('#tags option').prop('selected', true);
     var obj = { entry_id: entry_id, tag_ids: $('#tags').val() };
-    site.api.post( '/tags/assign', obj, hideAssigTagsForm, empty );  return false; 
+    site.api.post( '/entry/' + entry_id +'/tags/assign', obj, hideAssigTagsForm, empty );  return false; 
 }
-function findTags(entry_id){
+
+
+
+function addTag( entry_id, tag_id ) { 
+    var path = site.url.path(); 
+    var obj = { entry_id: entry_id, tag_id: tag_id, href: path };
+    site.api.put( '/entry/'+ entry_id +'/tags/' + tag_id, obj, reload, show );  return false; 
+}
+function delTag( entry_id, tag_id ) { 
+    var path = site.url.path(); 
+    var obj = { entry_id: entry_id, tag_id: tag_id, href: path };
+    site.api.delete( '/entry/'+ entry_id +'/tags/' + tag_id, obj, reload, show );  return false; 
+}
+function findTags2(entry_id){
     $('#tags option').prop('selected', true);
     var obj = { entry_id: entry_id, tag_ids: $('#tags').val() };
     site.api.post( '/tags/assign', obj, hideAssigTagsForm, empty );  return false; 
 }
-function findTags() {
-    var obj = { tags_text: $('#tags_text').val() };
-    site.api.post( '/tags/find', obj, displayFoundTags, empty );  return false; 
+
+//
+// Group API calls
+//
+function deleteGroup(data) { 
+    var obj = { group_id: data.group_id };
+    site.api.delete( '/groups/' + data.group_id, obj, reload, empty );  return false; 
 }
+function createGroup() {
+    var obj = { group_name: $('#mnu_text').val() };
+    site.api.post( '/groups', obj, reload, empty );  return false; 
+}
+
 
 //
 // Tag API calls
 //
 function selectTag( site, tag_id, tag_name )   { 
     var obj = { tag_id: tag_id, tag_name: tag_name };
-    site.api.put( '/tag', obj, reload, show ); return false; 
+    site.api.get( '/tag/' + tag_id + '/select', obj, reload, show ); return false; 
 }
 function unselectTag( site, tag_id, tag_name )   { 
     var obj = { tag_id: tag_id, tag_name: tag_name };
-    site.api.get( '/tag', obj, reload, show );  return false; 
+    site.api.get( '/tag/' + tag_id + '/unselect', obj, reload, show );  return false; 
 }
 function newTag() { 
     $('#newTagModal').modal('hide');
     var obj = { href: site.url.path(), tag_name: $('#new_tag_name').val(), tag_text: $('#new_tag_text').val(), tag_group_id: $('#new_tag_group_id').val() };
-    site.api.post( '/tag', obj, reload, empty );  return false; 
+    site.api.post( '/tags', obj, reload, empty );  return false; 
+}
+function deleteTag(data) { 
+    var obj = { tag_id: data.tag_id };
+    site.api.delete( '/tags/' + data.tag_id, obj, reload, empty );  return false; 
 }
 
 //
@@ -131,11 +198,15 @@ function newTag() {
 //
 function saveNewEntry() {
     var obj = getEntryObject('');
-    site.api.post( '/entries', obj, edit, show );  return false; 
+    if (obj) {
+        site.api.post( '/entries', obj, edit, show );  return false; 
+    }
 }
 function saveEntry( entry_id ) {
     var obj = getEntryObject(entry_id);
-    site.api.put( '/entries', obj, show, show );  return false; 
+    if (obj) {
+        site.api.put( '/entries/' + entry_id, obj, show, show );  return false; 
+    }
 }
 function runEntrySearch() {
     var obj = {q: $('#q').val()};
@@ -163,7 +234,22 @@ $( document ).ready(function() {
         $(".control_list").hide();
         if (visile){ $( '.control_list_' + id ).hide(); } else { $(".control_list_" + id ).show(); }
     });
-
+});
+$(document).on('click', '.btnRemove', function (e) { 
+    if (this.dataset.entity == 'tags') {
+        deleteTag(this.dataset);
+    }
+    if (this.dataset.entity == 'groups') {
+        deleteGroup(this.dataset);
+    }
+});
+$(document).on('click', '#btnAdd', function (e) { 
+    if (this.dataset.entity == 'tags') {
+        //createTag();
+    }
+    if (this.dataset.entity == 'groups') {
+        createGroup();
+    }
 });
 
 
