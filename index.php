@@ -38,12 +38,16 @@ require_once __DIR__ . '/vendor/recipe/recipe/src/Recipe/bootstrap.php';
  */
 use \Recipe\Util;
 use \Recipe\Controllers\ImportController;
+
 use \Recipe\Controllers\GroupApiController;
 use \Recipe\Controllers\GroupUiController;
+
 use \Recipe\Controllers\TagApiController;
 use \Recipe\Controllers\TagUiController;
-use \Recipe\Controllers\EntryController;
-use \Recipe\Controllers\ApiController;
+
+use \Recipe\Controllers\EntryUiController;
+use \Recipe\Controllers\EntryApiController;
+
 use \Klein\Klein;
 
 /**
@@ -71,38 +75,40 @@ $router->with('/ui', function () use ($router) {
     $router->with('/v1', function () use ($router) {
 	
         $router->respond('GET', '/entries', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->GetSelectedEntries($request);
         });
         $router->respond('GET', '/entries/search', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->GetFoundEntries($request);
         });
         $router->respond('GET', '/entries/all', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->GetAllEntries($request);
         });
         $router->respond('GET', '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->ViewEntry($request);
         });
         $router->respond('GET', '/entries/[i:entry_id]/edit', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->EditEntry($request);
         });
         $router->respond('GET', '/entries/[i:entry_id]/print', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->PrintEntry($request);
         });
         $router->respond('GET', '/entries/new', function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new EntryController();
+            $controller = new EntryUiController();
             return $controller->NewEntry($request);
         });
+
 
         $router->respond('GET', '/groups', function ($request, $response, $service, $app, $router, $matched) {
             $controller = new GroupUiController();
             return $controller->getGroups($request);
         });
+
 
         $router->respond('GET', '/tags', function ($request, $response, $service, $app, $router, $matched) {
             $controller = new TagUiController();
@@ -164,20 +170,56 @@ $router->with('/api', function () use ($router) {
             $controller = new TagApiController();
             return $controller->deleteTag($request);
         });
-
-
         // Select a tag 
-        $router->respond('PUT'   , '/tag'            , function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new ApiController();
-            return $controller->SelectTag($request);
+        $router->respond('GET'   , '/tag/[i:tag_id]/select'   , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();                  
+            return $controller->tagSelect($request);
         });
         // Unselect a tag 
-        $router->respond('GET'   , '/tag'            , function ($request, $response, $service, $app, $router, $matched) {
-            $controller = new ApiController();
-            return $controller->UnselectTag($request);
+        $router->respond('GET'   , '/tag/[i:tag_id]/unselect' , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->tagUnselect($request);
         });
 
-		
+
+
+
+
+
+
+
+        // Get all entry tags 
+        $router->respond('GET'  , '/entry/[i:entry_id]/tags'  , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->getEntryTags($request);
+        });
+        // Search for tags for entry by text 
+        $router->respond('GET'  , '/entry/[i:entry_id]/tags/search'  , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->searchEntryTags($request);
+        });
+        // Assign found tag to an entry
+        $router->respond('POST'  , '/entry/[i:entry_id]/tags/assign' , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->assignEntryTags($request);
+        });
+        // Attach tag to an entry
+        $router->respond('PUT'  , '/entry/[i:entry_id]/tags/[i:tag_id]'  , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->attachTagToEntry($request);
+        });
+        // Detach tag from entry
+        $router->respond('DELETE', '/entry/[i:entry_id]/tags/[i:tag_id]' , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new TagApiController();
+            return $controller->detachTagFromEntry($request);
+        });
+
+
+
+
+
+
+	
         // Returns a list of Groups
         $router->respond('GET'   , '/groups'             , function ($request, $response, $service, $app, $router, $matched) {
             $controller = new GroupApiController();
@@ -221,6 +263,51 @@ $router->with('/api', function () use ($router) {
 
 
 
+
+        // Returns a list of Entries
+        $router->respond('GET'   , '/entries'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->getEntries($request);
+        });
+        // Create a new Entry 
+        $router->respond('POST'  , '/entries'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->postEntries($request);
+        });
+        // Bulk update of Entries
+        $router->respond('PUT'   , '/entries'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->putEntries($request);
+        });
+        // Delete all Entries
+        $router->respond('DELETE', '/entries'           , function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->deleteEntries($request);
+        });
+        // Return a specified Entry
+        $router->respond('GET'   , '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->getEntry($request);
+        });
+        // Not allowed
+        $router->respond('POST'  , '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->postEntry($request);
+        });
+        // Update a specified Entry
+        $router->respond('PUT'   , '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->putEntry($request);
+        });
+        // Delete a specified Entry
+        $router->respond('DELETE', '/entries/[i:entry_id]', function ($request, $response, $service, $app, $router, $matched) {
+            $controller = new EntryApiController();
+            return $controller->deleteEntry($request);
+        });
+
+
+
+
     });
 
 });
@@ -240,3 +327,4 @@ $router->respond(function ($request, $response, $service, $app, $router, $matche
  * Dispatch routing settings
  */
 $router->dispatch();
+
